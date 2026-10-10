@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Durga Puja Spin & Win · Furniture Plaza</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rozha+One&family=Mukta:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --alta:#B3121F; --paar:#7A0C14; --gaanda:#F2A900; --shankha:#FFFFFF;
+    --ink:#2A1A12; --muted:#7B6A60; --line:#EAD9CF;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--shankha); color:var(--ink);
+    font:17px/1.55 "Mukta",system-ui,sans-serif;
+    min-height:100vh;
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  /* lal-paar saree border */
+  .paar{height:calc(18px + env(safe-area-inset-top,0px));background:var(--alta);
+        border-bottom:4px solid var(--gaanda);box-shadow:0 4px 0 var(--paar)}
+  .paar.bottom{position:sticky;top:100%;border:0;border-top:4px solid var(--gaanda);box-shadow:0 -4px 0 var(--paar);height:18px;margin-top:40px}
+  main{max-width:440px;margin:0 auto;padding:28px 20px 0}
+  .brand{font-weight:700;letter-spacing:.02em;color:var(--paar);font-size:15px;margin:0}
+  h1{font-family:"Rozha One",Georgia,serif;font-weight:400;font-size:44px;line-height:1.02;margin:6px 0 10px;color:var(--alta)}
+  .lede{margin:0 0 26px;color:var(--muted)}
+  label{display:block;font-weight:600;font-size:15px;margin:16px 0 6px}
+  input{width:100%;font:inherit;padding:12px 14px;border:1.5px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)}
+  input:focus{outline:none;border-color:var(--alta);box-shadow:0 0 0 3px rgba(179,18,31,.15)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .opt{font-weight:400;color:var(--muted)}
+  button{
+    width:100%;margin-top:26px;padding:15px;border:0;border-radius:6px;cursor:pointer;
+    font:700 18px "Mukta",sans-serif;color:#fff;background:var(--alta);
+    box-shadow:0 4px 0 var(--paar);
+  }
+  button:active{transform:translateY(2px);box-shadow:0 2px 0 var(--paar)}
+  button:disabled{opacity:.6;cursor:default}
+  button:focus-visible{outline:3px solid var(--gaanda);outline-offset:3px}
+  .err{color:var(--alta);font-weight:600;min-height:1.5em;margin:12px 0 0}
+  .hide{display:none!important}
+
+  /* wheel */
+  .wheel-wrap{position:relative;width:min(88vw,360px);aspect-ratio:1;margin:8px auto 0}
+  #wheel{width:100%;height:100%;border-radius:50%;will-change:transform}
+  .pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;z-index:2;
+           border-left:16px solid transparent;border-right:16px solid transparent;border-top:30px solid var(--paar);
+           filter:drop-shadow(0 2px 0 var(--gaanda))}
+  .hint{text-align:center;color:var(--muted);margin:14px 0 0}
+
+  /* result */
+  .won{text-align:center}
+  .won .prize{font-family:"Rozha One",Georgia,serif;font-size:46px;line-height:1.05;color:var(--alta);margin:6px 0 18px}
+  .code{display:inline-block;border:2px dashed var(--alta);border-radius:6px;padding:8px 18px;
+        font:700 26px "Mukta",sans-serif;letter-spacing:.12em;color:var(--paar)}
+  .small{font-size:15px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="paar"></div>
+<main>
+  <p class="brand">Furniture Plaza</p>
+  <h1>Durga Puja Spin & Win</h1>
+
+  <!-- Step 1: details -->
+  <section id="s-form">
+    <p class="lede">Bought something from us this Puja? Enter your bill details and spin once for a gift.</p>
+    <form id="f" novalidate>
+      <label for="name">Your name</label>
+      <input id="name" autocomplete="name" required>
+      <label for="mobile">Mobile number</label>
+      <input id="mobile" type="tel" inputmode="numeric" maxlength="10" placeholder="10-digit number" required>
+      <label for="email">Email <span class="opt">(to get your prize by mail)</span></label>
+      <input id="email" type="email" autocomplete="email">
+      <label for="item">What did you buy?</label>
+      <input id="item" placeholder="e.g. Sofa set, double bed" required>
+      <div class="row">
+        <div><label for="amount">Bill amount (₹)</label><input id="amount" type="number" inputmode="numeric" min="1" required></div>
+        <div><label for="bill">Bill number</label><input id="bill" required></div>
+      </div>
+      <button id="go" type="submit">Continue to spin</button>
+      <p class="err" id="err1" role="alert"></p>
+    </form>
+  </section>
+
+  <!-- Step 2: wheel -->
+  <section id="s-spin" class="hide">
+    <div class="wheel-wrap">
+      <div class="pointer" aria-hidden="true"></div>
+      <canvas id="wheel" width="720" height="720" aria-label="Prize wheel"></canvas>
+    </div>
+    <button id="spin">Spin the wheel</button>
+    <p class="hint">You get one spin per bill.</p>
+  </section>
+
+  <!-- Step 3: result -->
+  <section id="s-won" class="won hide">
+    <p class="small" style="margin:0">Congratulations <span id="wname"></span>, you won</p>
+    <p class="prize" id="wprize"></p>
+    <div class="code" id="wcode"></div>
+    <p class="small">Your claim code</p>
+    <button id="claim">Claim my prize</button>
+    <p class="err" id="err3" role="alert"></p>
+  </section>
+
+  <section id="s-done" class="won hide">
+    <p class="prize" style="font-size:38px">Prize claimed</p>
+    <p>Show claim code <b id="dcode"></b> and your bill at the store counter to collect <b id="dprize"></b>.</p>
+    <p class="small" id="dmail"></p>
+  </section>
+</main>
+<div class="paar bottom"></div>
+
+<script>
+  // ⬇️ Apps Script Web App URL yahan paste karo
+  const API = 'https://script.google.com/macros/s/AKfycbwmFdLnddD5u8El3hrFHqB7HmBlE-RL131v1ks50_fDdB-CIOEKYdu33KVZEefdrX2e/exec';
+
+  // Backend (Code.gs) wali list ke same ORDER me hona chahiye
+  const PRIZES = ['Mobile Stand','₹50,000 Cashback','Pillow Set (Pack of 2)','Sofa Set','Bedsheet',
+                  'Recliner','Mattress Protector','₹5,000 Cashback','₹10,000 OFF','Mattress'];
+  let entry = null, result = null, pending = null;
+  const $ = id => document.getElementById(id);
+  const show = id => ['s-form','s-spin','s-won','s-done'].forEach(s => $(s).classList.toggle('hide', s !== id));
+
+  async function call(body){
+    const r = await fetch(API, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(body)});
+    return r.json();
+  }
+
+  // Page khulte hi server ko jaga do (cold start ka wait yahin nikal jaye)
+  fetch(API).catch(()=>{});
+
+  // ---- wheel ----
+  const cv = $('wheel'), ctx = cv.getContext('2d');
+  function draw(){
+    const n = PRIZES.length, seg = 2*Math.PI/n, c = 360, R = 350;
+    ctx.clearRect(0,0,720,720);
+    ctx.beginPath(); ctx.arc(c,c,R,0,2*Math.PI); ctx.fillStyle = '#F2A900'; ctx.fill();
+    PRIZES.forEach((p,i) => {
+      const mid = -Math.PI/2 + i*seg;
+      ctx.beginPath(); ctx.moveTo(c,c); ctx.arc(c,c,R-14,mid-seg/2,mid+seg/2); ctx.closePath();
+      ctx.fillStyle = i%2 ? '#FFFFFF' : '#B3121F'; ctx.fill();
+      ctx.save(); ctx.translate(c,c); ctx.rotate(mid);
+      ctx.fillStyle = i%2 ? '#7A0C14' : '#FFFFFF';
+      ctx.font = '700 27px Mukta, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      const words = p.split(' ');
+      if (p.length > 11 && words.length > 1) {
+        const h = p.startsWith('Pillow') ? 2 : Math.ceil(words.length/2);
+        ctx.fillText(words.slice(0,h).join(' '), R-36, -15);
+        ctx.fillText(words.slice(h).join(' '), R-36, 15);
+      } else ctx.fillText(p, R-36, 0);
+      ctx.restore();
+    });
+    ctx.beginPath(); ctx.arc(c,c,62,0,2*Math.PI); ctx.fillStyle='#F2A900'; ctx.fill();
+    ctx.beginPath(); ctx.arc(c,c,50,0,2*Math.PI); ctx.fillStyle='#7A0C14'; ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='400 40px "Rozha One", serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('FP',c,c+3);
+  }
+  document.fonts ? document.fonts.ready.then(draw) : draw();
+  draw();
+
+  // ---- step 1 ----
+  $('f').addEventListener('submit', e => {
+    e.preventDefault();
+    const v = id => $(id).value.trim();
+    entry = {name:v('name'), mobile:v('mobile').replace(/\D/g,''), email:v('email'), item:v('item'), amount:v('amount'), bill:v('bill')};
+    if (!entry.name || !entry.item || !entry.bill) return $('err1').textContent = 'Fill in your name, item and bill number.';
+    if (entry.mobile.length !== 10) return $('err1').textContent = 'Enter a 10-digit mobile number.';
+    if (!(Number(entry.amount) > 0)) return $('err1').textContent = 'Enter the bill amount.';
+    if (entry.email && !/^\S+@\S+\.\S+$/.test(entry.email)) return $('err1').textContent = 'Check your email address.';
+    $('err1').textContent = '';
+    // Server call abhi se shuru; jab tak customer Spin dabayega, result aa chuka hoga
+    pending = call({action:'spin', ...entry})
+      .catch(() => ({ok:false, error:'No connection. Check your internet and try again.'}));
+    show('s-spin');
+  });
+
+  // ---- step 2 ----
+  // Wheel tap karte hi ghoomta hai; result aate hi sahi prize pe dheere rukta hai.
+  let angle = 0, raf = 0;
+  const setA = a => { angle = a; cv.style.transform = `rotate(${a}deg)`; };
+  function freeSpin(){
+    let last = performance.now();
+    const tick = t => { setA(angle + (t-last)*0.72); last = t; raf = requestAnimationFrame(tick); };
+    raf = requestAnimationFrame(tick);
+  }
+  function landOn(k){
+    return new Promise(res => {
+      cancelAnimationFrame(raf);
+      const seg = 360/PRIZES.length;
+      const jitter = (Math.random()-.5) * seg * .5;          // segment ke andar hi rahe
+      const want = ((-k*seg + jitter) % 360 + 360) % 360;
+      const cur = ((angle % 360) + 360) % 360;
+      const target = angle + ((want - cur + 360) % 360) + 360*3;
+      const from = angle, dur = matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 3800, t0 = performance.now();
+      const step = t => {
+        const p = Math.min(1, (t-t0)/dur), e = 1 - Math.pow(1-p, 3);
+        setA(from + (target-from)*e);
+        p < 1 ? requestAnimationFrame(step) : res();
+      };
+      requestAnimationFrame(step);
+    });
+  }
+
+  $('spin').addEventListener('click', async () => {
+    const b = $('spin'); b.disabled = true; b.textContent = 'Spinning…';
+    freeSpin();
+    const d = await pending;
+    if (!d.ok) {
+      cancelAnimationFrame(raf);
+      show('s-form'); $('err1').textContent = d.error; b.disabled = false; b.textContent = 'Spin the wheel'; return;
+    }
+    result = d;
+    if (d.claimed) { cancelAnimationFrame(raf); return done(); }
+    const k = PRIZES.indexOf(d.prize);
+    if (k > -1) await landOn(k); else cancelAnimationFrame(raf);
+    $('wname').textContent = entry.name.split(' ')[0];
+    $('wprize').textContent = d.prize;
+    $('wcode').textContent = d.code;
+    show('s-won');
+  });
+
+  // ---- step 3 ----
+  $('claim').addEventListener('click', async () => {
+    const b = $('claim'); b.disabled = true; b.textContent = 'Claiming…';
+    let d;
+    try { d = await call({action:'claim', code:result.code, bill:entry.bill}); }
+    catch { d = {ok:false, error:'No connection. Tap Claim my prize again.'}; }
+    if (!d.ok) { $('err3').textContent = d.error; b.disabled = false; b.textContent = 'Claim my prize'; return; }
+    done();
+  });
+
+  function done(){
+    $('dcode').textContent = result.code;
+    $('dprize').textContent = result.prize;
+    $('dmail').textContent = entry.email ? `We've also sent the details to ${entry.email}.` : '';
+    show('s-done');
+  }
+</script>
+</body>
+</html>
